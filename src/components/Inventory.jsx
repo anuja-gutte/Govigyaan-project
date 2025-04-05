@@ -1,77 +1,118 @@
-import React, { useState, useEffect } from 'react';
-import { db } from '../firebaseConfig';
-import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { useNavigate } from 'react-router-dom';
-import logo from '../assets/Govigyan_banner_1.png';
-// import '../styles/Inventory.css';
+import React, { useEffect, useState } from "react";
+import { db } from "../firebaseConfig"; // Import your Firebase config
+import { collection, getDocs, deleteDoc, doc, addDoc, updateDoc } from "firebase/firestore";
+import '../styles/InventoryDashboard.css';
 
-const Inventory = () => {
-    const [products, setProducts] = useState([]);
-    const [newProduct, setNewProduct] = useState({ name: '', price: '', stock: '', category: '', qrCode: '' });
+const InventoryDashboard = () => {
+  const [products, setProducts] = useState([]);
+  const [newProduct, setNewProduct] = useState({
+    name: "",
+    weight: "",
+    price: "",
+    stock: "",
+    category: "",
+    lowStockAlert: "",
+    qrCode: "",
+  });
+  const [editingProduct, setEditingProduct] = useState(null);
 
-    const navigate = useNavigate();
-
-    useEffect(() => {
-        const fetchProducts = async () => {
-            const querySnapshot = await getDocs(collection(db, 'products'));
-            const productList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setProducts(productList);
-        };
-        fetchProducts();
-    }, []);
-
-    const handleInputChange = (e) => {
-        setNewProduct({ ...newProduct, [e.target.name]: e.target.value });
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const querySnapshot = await getDocs(collection(db, "products"));
+      const productList = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setProducts(productList);
     };
+    fetchProducts();
+  }, []);
 
-    const addProduct = async () => {
-        await addDoc(collection(db, 'products'), newProduct);
-        setNewProduct({ name: '', price: '', stock: '', category: '', qrCode: '' });
-        window.location.reload();
-    };
+  const handleChange = (e) => {
+    setNewProduct({ ...newProduct, [e.target.name]: e.target.value });
+  };
 
-    const updateProduct = async (id, updatedStock) => {
-        const productRef = doc(db, 'products', id);
-        await updateDoc(productRef, { stock: updatedStock });
-        window.location.reload();
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (editingProduct) {
+      await updateDoc(doc(db, "products", editingProduct.id), newProduct);
+      setProducts((prev) =>
+        prev.map((p) =>
+          p.id === editingProduct.id ? { ...p, ...newProduct } : p
+        )
+      );
+      setEditingProduct(null);
+    } else {
+      const docRef = await addDoc(collection(db, "products"), newProduct);
+      setProducts([...products, { id: docRef.id, ...newProduct }]);
+    }
+    setNewProduct({
+      name: "",
+      weight: "",
+      price: "",
+      stock: "",
+      category: "",
+      lowStockAlert: "",
+      qrCode: "",
+    });
+  };
 
-    const deleteProduct = async (id) => {
-        await deleteDoc(doc(db, 'products', id));
-        window.location.reload();
-    };
+  const handleDelete = async (id) => {
+    await deleteDoc(doc(db, "products", id));
+    setProducts(products.filter((p) => p.id !== id));
+  };
 
-    return (
-        <div>
-            {/* ✅ Navbar */}
-            <div className="navbar">
-                <span className="back-arrow" onClick={() => navigate(-1)}>&larr;</span>
-                <img src={logo} alt="Logo" className="logo" />
+  const handleEdit = (product) => {
+    setEditingProduct(product);
+    setNewProduct(product);
+  };
+
+  return (
+    <div className="inventory-container">
+      <header>
+        <h2>Admin Inventory Management</h2>
+      </header>
+
+      <form className="inventory-form" onSubmit={handleSubmit}>
+        <input type="text" name="name" placeholder="Product Name" value={newProduct.name} onChange={handleChange} required />
+        <input type="text" name="weight" placeholder="Weight" value={newProduct.weight} onChange={handleChange} required />
+        <input type="number" name="price" placeholder="Price" value={newProduct.price} onChange={handleChange} required />
+        <input type="number" name="stock" placeholder="Stock" value={newProduct.stock} onChange={handleChange} required />
+        <input type="text" name="category" placeholder="Category" value={newProduct.category} onChange={handleChange} required />
+        <input type="number" name="lowStockAlert" placeholder="Low Stock Alert" value={newProduct.lowStockAlert} onChange={handleChange} required />
+        <input type="text" name="qrCode" placeholder="QR Code" value={newProduct.qrCode} onChange={handleChange} />
+        <button type="submit">{editingProduct ? "Update Product" : "Add Product"}</button>
+      </form>
+
+      <div className="product-list">
+        {products.map((p) => (
+          <div
+            key={p.id}
+            className={`product-card ${
+              parseInt(p.stock) <= parseInt(p.lowStockAlert) ? "low-stock" : ""
+            }`}
+          >
+            <div className="product-info">
+              <strong>{p.name || "Unnamed Product"}</strong>
+              <span>₹{p.price || "N/A"}</span>
+              <span>Stock: {p.stock || "N/A"}</span>
+              <span>Category: {p.category || "N/A"}</span>
+              <span>Weight: {p.weight || "N/A"}</span>
+              <span>QR: {p.qrCode || "N/A"}</span>
             </div>
-
-            {/* ✅ Inventory Panel */}
-            <div className="inventory-admin-panel">
-                <h2>Admin Inventory Management</h2>
-                <div className="add-product-form">
-                    <input type="text" name="name" placeholder="Product Name" value={newProduct.name} onChange={handleInputChange} />
-                    <input type="number" name="price" placeholder="Price" value={newProduct.price} onChange={handleInputChange} />
-                    <input type="number" name="stock" placeholder="Stock" value={newProduct.stock} onChange={handleInputChange} />
-                    <input type="text" name="category" placeholder="Category" value={newProduct.category} onChange={handleInputChange} />
-                    <input type="text" name="qrCode" placeholder="QR Code" value={newProduct.qrCode} onChange={handleInputChange} />
-                    <button onClick={addProduct}>Add Product</button>
-                </div>
-                <ul className="product-list">
-                    {products.map(product => (
-                        <li key={product.id}>
-                            <strong>{product.name}</strong> - ₹{product.price} - Stock: {product.stock} - Category: {product.category}
-                            <input type="number" placeholder="Update Stock" onChange={(e) => updateProduct(product.id, e.target.value)} />
-                            <button onClick={() => deleteProduct(product.id)}>Delete</button>
-                        </li>
-                    ))}
-                </ul>
+            <div className="product-actions">
+              <button className="btn update" onClick={() => handleEdit(p)}>
+                Update Stock
+              </button>
+              <button className="btn delete" onClick={() => handleDelete(p.id)}>
+                Delete
+              </button>
             </div>
-        </div>
-    );
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 };
 
-export default Inventory;
+export default InventoryDashboard;
