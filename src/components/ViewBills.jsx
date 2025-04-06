@@ -106,7 +106,7 @@ const ViewBills = () => {
             <div className="bill-list">
                 {bills.map((bill) => (
                     <div key={bill.id} className="bill-card">
-                        <h3>Customer: {bill.userName}</h3>
+                        <h3>Cashier: {bill.userName}</h3>
                         <p>Date: {new Date(bill.date).toLocaleString()}</p>
                         <p>Total: ₹{bill.totalWithGST.toFixed(2)}</p>
 
