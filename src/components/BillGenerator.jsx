@@ -11,7 +11,7 @@ const BillGenerator = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const products = location.state?.products || [];
-    const userName = localStorage.getItem('userName') || 'Customer';
+    const userName = localStorage.getItem('userName') || 'Cashier';
 
     const [sgst, setSgst] = useState(9);
     const [cgst, setCgst] = useState(9);
