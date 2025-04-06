@@ -99,7 +99,7 @@ const Bills = () => {
         let y = docPdf.lastAutoTable.finalY + 10;
 
         docPdf.setFontSize(12);
-        docPdf.text(`Customer: ${userName}`, 14, y);
+        docPdf.text(`Cashier: ${userName}`, 14, y);
         y += 8;
         docPdf.text(`Date: ${new Date(date).toLocaleString()}`, 14, y);
         y += 8;
@@ -142,7 +142,7 @@ const Bills = () => {
             <div className="bill-list">
                 {bills.map((bill) => (
                     <div key={bill.id} className="bill-card">
-                        <h3>Customer: {bill.userName}</h3>
+                        <h3>Cashier: {bill.userName}</h3>
                         <p>Date: {new Date(bill.date).toLocaleString()}</p>
                         <p>Total: ₹{bill.totalWithGST.toFixed(2)}</p>
 
